@@ -1,0 +1,271 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+class user {
+protected:
+    string name; // FIXED: Added missing data type 'string'
+public:
+    user() {
+        name = ""; // FIXED: Changed curly quotes to standard quotes
+    }
+    user(string n) {
+        name = n;
+    }
+    virtual void display() {
+        cout << name << endl;
+    }
+    virtual int interface() {
+        cout << "welcome" << endl; // FIXED: Changed curly quotes to standard quotes
+        return 0;
+    } // FIXED: Removed unnecessary semicolon after function body
+};
+
+class teacher : public user {
+public:
+    teacher(string n) {
+        name = n;
+    }
+    void display() override {
+        cout << name << endl;
+    }
+    int interface() override { // FIXED: Added override keyword for consistency
+        int choice;
+        cout << "Select any task to perform (enter 1, 2, or 3)" << endl;
+        cout << "1. Add quiz" << endl;
+        cout << "2. View existing quizzes" << endl;
+        cout << "3. Logout" << endl;
+        cin >> choice;
+        return choice;
+    }
+};
+
+class student : public user {
+private:
+    int rollno;
+public:
+    student(string nnn, int ii) {
+        name = nnn;
+        rollno = ii;
+    }
+    void display() override {
+        cout << name << endl;
+        cout << rollno << endl;
+    }
+    int interface() override { // FIXED: Added override keyword
+        int choice;
+        cout << "Select any task to perform (enter 1, 2, or 3)" << endl;
+        cout << "1. View quizzes" << endl;
+        cout << "2. View grades" << endl;
+        cout << "3. Logout" << endl;
+        cin >> choice;
+        return choice;
+    }
+};
+
+int displaymenu() {
+    int choice;
+    cout << "........WELCOME TO THE ONLINE QUIZ PLATFORM........!!!" << endl;
+    cout << "....................MAIN MENU..........................." << endl;
+    cout << "Select your role (enter 1 or 2)" << endl;
+    cout << "1. Teacher" << endl;
+    cout << "2. Student" << endl;
+    cin >> choice;
+    return choice;
+}
+
+class quiz {
+protected:
+    int maxQuestions;
+    int* answers;
+    string* useranswers;
+    string* ques;
+public:
+    quiz(int maxQ) : maxQuestions(maxQ) {
+        answers = new int[maxQuestions];
+        useranswers = new string[maxQuestions];
+        ques = new string[maxQuestions];
+        for (int j = 0; j < maxQuestions; j++) {
+            answers[j] = 0; 
+            useranswers[j] = ""; 
+            ques[j] = "";
+        }
+    }
+    virtual void displayquiz() = 0;
+    virtual void setquiz() = 0;
+    virtual ~quiz() { 
+        delete[] answers;
+        delete[] useranswers;
+        delete[] ques;
+    }
+};
+
+class mcq : public quiz {
+private:
+    int numOptions;
+    string** questions;
+public:
+    mcq(int maxQ, int options) : quiz(maxQ), numOptions(options) {
+        questions = new string*[maxQuestions];
+        for (int i = 0; i < maxQuestions; i++) {
+            questions[i] = new string[numOptions];
+            for (int j = 0; j < numOptions; j++) {
+                questions[i][j] = ""; 
+            }
+        }
+    }
+    
+    ~mcq() override { 
+        for (int i = 0; i < maxQuestions; i++) { 
+            delete[] questions[i];
+        }
+        delete[] questions; 
+    }
+
+    void displayquiz() override {
+        int score = 0;
+        int choice;
+        for (int i = 0; i < maxQuestions; i++) {
+            cout << "Qno" << i + 1 << ":" << ques[i] << endl;
+            for (int j = 0; j < numOptions; j++) {
+                cout << "option no:" << j + 1 << "  " << questions[i][j] << endl;
+            }
+            cin >> choice;
+            if (choice == answers[i]) {
+                score++;   
+            }
+        }
+        cout << "quiz finished" << endl;
+        cout << "......YOUR SCORES.....:" << score << endl;
+        cout << "do you want to attempt another quiz???" << endl;
+    }
+
+    void setquiz() override {
+        for (int i = 0; i < maxQuestions; i++) {
+            cout << "enter q no " << i + 1 << endl;
+            cin.ignore(); // FIXED: Keeps line breaks from breaking upcoming getline
+            getline(cin, ques[i]);
+            for (int j = 0; j < numOptions; j++) {
+                cout << "enter option no " << j + 1 << endl;
+                getline(cin, questions[i][j]);
+            }
+            cout << "enter the number of correct option for this question" << endl;
+            cin >> answers[i];
+        }
+    }
+};
+
+int main() {
+    int maxusers = 10;
+    int maxquiz = 10;
+    user* arr[maxusers];
+    quiz* arrr[maxquiz];
+    string arrOfQuizNames[maxquiz];
+    int numOfQuizes = 0;
+    
+    // Initialize pointers to nullptr to avoid dangling pointers
+    for(int i = 0; i < maxusers; i++) arr[i] = nullptr;
+    for(int i = 0; i < maxquiz; i++) arrr[i] = nullptr;
+    
+    for (int i = 0; i < maxusers; i++) {
+        bool logout = false;
+        
+        while (logout == false) { 
+            int role = displaymenu();
+            switch (role) {
+                case 1: {
+                    string n;
+                    cout << "...................TEACHER INTERFACE....................." << endl;
+                    cout << "enter your name" << endl;
+                    cin >> n;
+                    arr[i] = new teacher(n);
+                    
+                    while (!logout) {
+                        int choice = arr[i]->interface();
+                        switch (choice) {
+                            case 1: { 
+                                int t, o;
+                                cout << "....PLEASE PROVIDE DETAILS OF THE MCQS QUIZ TO SET....!!!" << endl;
+                                cout << "Enter quiz name" << endl;
+                                cin >> arrOfQuizNames[numOfQuizes];
+                                cout << "Enter no 0f total questions" << endl;
+                                cin >> t;
+                                cout << "Enter no of options: ";
+                                cin >> o;
+                                arrr[numOfQuizes] = new mcq(t, o);
+                                arrr[numOfQuizes]->setquiz();
+                                numOfQuizes++;
+                                cout << ".........YOUR QUIZ HAS BEEN ADDED SUCCESFULLY........!" << endl;
+                                cout << "....what do you want to do next....?" << endl;
+                                break;
+                            }      
+                            case 2: { 
+                                cout << ".....LIST OF QUIZES ADDED BY THE TEACHERS.....!" << endl;
+                                for (int j = 0; j < numOfQuizes; j++) {
+                                    cout << j + 1 << ":" << arrOfQuizNames[j] << endl;
+                                }
+                                break;
+                            }
+                            case 3: { 
+                                logout = true;
+                                break;
+                            } 
+                            default:
+                                cout << "Invalid input......!" << endl;
+                        }
+                    }
+                    break;
+                }       
+                case 2: {
+                    // Student interface  
+                    cout << ".................STUDENT INTERFACE.................." << endl;
+                    string nn;
+                    int r;
+                    cout << "Enter your name" << endl;
+                    cin >> nn;
+                    cout << "Enter your roll no" << endl;
+                    cin >> r;
+                    arr[i] = new student(nn, r);
+                    
+                    while (!logout) {
+                        int choice = arr[i]->interface();
+                        switch (choice) {
+                            case 1: {
+                                int opt;
+                                for (int k = 0; k < numOfQuizes; k++) {
+                                    cout << k << ":" << arrOfQuizNames[k] << endl;
+                                }
+                                cout << "Enter the number of quiz to attempt(note:only enter digits!!!!)" << endl;
+                                cin >> opt;
+                                
+                                if(opt >= 0 && opt < numOfQuizes && arrr[opt] != nullptr) {
+                                    arrr[opt]->displayquiz();
+                                } else {
+                                    cout << "Quiz index doesn't exist!" << endl;
+                                }
+                                break;
+                            }                             
+                            case 3: { 
+                                logout = true;
+                                break;
+                            } 
+                            default:
+                                cout << "invalid input" << endl;
+                        } 
+                    }
+                    break;
+                }         
+                default:
+                    cout << "Invalid input" << endl;
+            }
+        }       
+    }
+    
+    // Cleanup memory allocations before exit
+    for(int i = 0; i < maxusers; i++) delete arr[i];
+    for(int i = 0; i < numOfQuizes; i++) delete arrr[i];
+
+    cout << "maximum number of users reached......" << endl;   
+    cout << "exiting program" << endl;
+    return 0;
+}
